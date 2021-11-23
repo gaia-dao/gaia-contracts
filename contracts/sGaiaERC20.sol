@@ -4,7 +4,6 @@
 
 pragma solidity 0.7.5;
 
-// Adding some test language...
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
  * checks.
