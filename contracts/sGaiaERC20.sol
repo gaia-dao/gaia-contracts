@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Notes on this contract here: https://app.clarity.so/gaia1/notes/38012ab6-bf5e-40c8-93ce-3dc571d07121
+// Notes on this contract here: https://app.clarity.so/gaia1/pages/19f5e4b2-a6d1-4323-a5b7-89e53fdf91dd
 
 pragma solidity 0.7.5;
 
