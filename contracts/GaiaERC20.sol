@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+
+// Notes on this contract: https://app.clarity.so/gaia1/notes/47f400f7-af74-4942-a534-2dc7640ac20b
+
+
 pragma solidity 0.7.5;
 
 library EnumerableSet {
