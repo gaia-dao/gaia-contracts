@@ -5,13 +5,27 @@ require("@nomiclabs/hardhat-waffle");
 
 
 module.exports = {
-  solidity: "0.7.5",
+  solidity: {
+    version: "0.7.5",
+    overrides: {
+      "contracts/Treasury.sol": {
+        version: "0.7.5",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1
+          }
+        }
+      }
+    }
+  },
   networks: {
     hardhat: {
       chainId: 1337,
       forking: {
         url: process.env.ARBITRUMONE_URL,
         blockNumber: 3307200, // latest block when input, can be changed
+        enabled: true
       },
       accounts: [
         {privateKey: process.env.PRIVATE_KEY_1, balance: (100 * (10 ** 18)).toString()},

@@ -328,6 +328,17 @@ interface ITreasury {
     function mintRewards( address _recipient, uint _amount ) external;
 }
 
+/**
+* @dev Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
+*/
+interface ArbSys {
+    /**
+    * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
+    * @return block number as int
+    */
+    function arbBlockNumber() external view returns (uint);
+}
+
 contract Distributor is Policy {
     using SafeMath for uint;
     using SafeERC20 for IERC20;
@@ -380,7 +391,7 @@ contract Distributor is Policy {
         @notice send epoch reward to staking contract
      */
     function distribute() external returns ( bool ) {
-        if ( nextEpochBlock <= block.number ) {
+        if ( nextEpochBlock <= ArbSys(100).arbBlockNumber() ) {
             nextEpochBlock = nextEpochBlock.add( epochLength ); // set next epoch block
             
             // distribute rewards to each recipient

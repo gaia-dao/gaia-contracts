@@ -200,6 +200,17 @@ interface IBondCalculator {
   function valuation( address pair_, uint amount_ ) external view returns ( uint _value );
 }
 
+/**
+* @dev Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
+*/
+interface ArbSys {
+    /**
+    * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
+    * @return block number as int
+    */
+    function arbBlockNumber() external view returns (uint);
+}
+
 contract OlympusTreasury is Ownable {
 
     using SafeMath for uint;
@@ -485,26 +496,28 @@ contract OlympusTreasury is Ownable {
      */
     function queue( MANAGING _managing, address _address ) external onlyManager() returns ( bool ) {
         require( _address != address(0) );
+        uint queueBlock = ArbSys(100).arbBlockNumber().add( blocksNeededForQueue );
+        uint queueBlock2 = ArbSys(100).arbBlockNumber().add( blocksNeededForQueue.mul( 2 ) );
         if ( _managing == MANAGING.RESERVEDEPOSITOR ) { // 0
-            reserveDepositorQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            reserveDepositorQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.RESERVESPENDER ) { // 1
-            reserveSpenderQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            reserveSpenderQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.RESERVETOKEN ) { // 2
-            reserveTokenQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            reserveTokenQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.RESERVEMANAGER ) { // 3
-            ReserveManagerQueue[ _address ] = block.number.add( blocksNeededForQueue.mul( 2 ) );
+            ReserveManagerQueue[ _address ] = queueBlock2;
         } else if ( _managing == MANAGING.LIQUIDITYDEPOSITOR ) { // 4
-            LiquidityDepositorQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            LiquidityDepositorQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.LIQUIDITYTOKEN ) { // 5
-            LiquidityTokenQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            LiquidityTokenQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.LIQUIDITYMANAGER ) { // 6
-            LiquidityManagerQueue[ _address ] = block.number.add( blocksNeededForQueue.mul( 2 ) );
+            LiquidityManagerQueue[ _address ] = queueBlock2;
         } else if ( _managing == MANAGING.DEBTOR ) { // 7
-            debtorQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            debtorQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.REWARDMANAGER ) { // 8
-            rewardManagerQueue[ _address ] = block.number.add( blocksNeededForQueue );
+            rewardManagerQueue[ _address ] = queueBlock;
         } else if ( _managing == MANAGING.SOHM ) { // 9
-            sOHMQueue = block.number.add( blocksNeededForQueue );
+            sOHMQueue = queueBlock;
         } else return false;
 
         emit ChangeQueued( _managing, _address );
@@ -639,7 +652,7 @@ contract OlympusTreasury is Ownable {
     ) internal view returns ( bool ) {
         if ( !status_[ _address ] ) {
             require( queue_[ _address ] != 0, "Must queue" );
-            require( queue_[ _address ] <= block.number, "Queue not expired" );
+            require( queue_[ _address ] <= ArbSys(100).arbBlockNumber(), "Queue not expired" );
             return true;
         } return false;
     }

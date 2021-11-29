@@ -629,6 +629,17 @@ interface IStakingHelper {
     function stake( uint _amount, address _recipient ) external;
 }
 
+/**
+* @dev Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
+*/
+interface ArbSys {
+    /**
+    * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
+    * @return block number as int
+    */
+    function arbBlockNumber() external view returns (uint);
+}
+
 contract OlympusBondDepository is Ownable {
 
     using FixedPoint for *;
@@ -750,7 +761,7 @@ contract OlympusBondDepository is Ownable {
             maxDebt: _maxDebt
         });
         totalDebt = _initialDebt;
-        lastDecay = block.number;
+        lastDecay = ArbSys(100).arbBlockNumber();
     }
 
 
@@ -796,7 +807,7 @@ contract OlympusBondDepository is Ownable {
             rate: _increment,
             target: _target,
             buffer: _buffer,
-            lastBlock: block.number
+            lastBlock: ArbSys(100).arbBlockNumber()
         });
     }
 
@@ -863,12 +874,12 @@ contract OlympusBondDepository is Ownable {
         bondInfo[ _depositor ] = Bond({ 
             payout: bondInfo[ _depositor ].payout.add( payout ),
             vesting: terms.vestingTerm,
-            lastBlock: block.number,
+            lastBlock: ArbSys(100).arbBlockNumber(),
             pricePaid: priceInUSD
         });
 
         // indexed events are emitted
-        emit BondCreated( _amount, payout, block.number.add( terms.vestingTerm ), priceInUSD );
+        emit BondCreated( _amount, payout, ArbSys(100).arbBlockNumber().add( terms.vestingTerm ), priceInUSD );
         emit BondPriceChanged( bondPriceInUSD(), _bondPrice(), debtRatio() );
 
         adjust(); // control variable is adjusted
@@ -897,8 +908,8 @@ contract OlympusBondDepository is Ownable {
             // store updated deposit info
             bondInfo[ _recipient ] = Bond({
                 payout: info.payout.sub( payout ),
-                vesting: info.vesting.sub( block.number.sub( info.lastBlock ) ),
-                lastBlock: block.number,
+                vesting: info.vesting.sub( ArbSys(100).arbBlockNumber().sub( info.lastBlock ) ),
+                lastBlock: ArbSys(100).arbBlockNumber(),
                 pricePaid: info.pricePaid
             });
 
@@ -938,7 +949,7 @@ contract OlympusBondDepository is Ownable {
      */
     function adjust() internal {
         uint blockCanAdjust = adjustment.lastBlock.add( adjustment.buffer );
-        if( adjustment.rate != 0 && block.number >= blockCanAdjust ) {
+        if( adjustment.rate != 0 && ArbSys(100).arbBlockNumber() >= blockCanAdjust ) {
             uint initial = terms.controlVariable;
             if ( adjustment.add ) {
                 terms.controlVariable = terms.controlVariable.add( adjustment.rate );
@@ -951,7 +962,7 @@ contract OlympusBondDepository is Ownable {
                     adjustment.rate = 0;
                 }
             }
-            adjustment.lastBlock = block.number;
+            adjustment.lastBlock = ArbSys(100).arbBlockNumber();
             emit ControlVariableAdjustment( initial, terms.controlVariable, adjustment.rate, adjustment.add );
         }
     }
@@ -961,7 +972,7 @@ contract OlympusBondDepository is Ownable {
      */
     function decayDebt() internal {
         totalDebt = totalDebt.sub( debtDecay() );
-        lastDecay = block.number;
+        lastDecay = ArbSys(100).arbBlockNumber();
     }
 
 
@@ -1061,7 +1072,7 @@ contract OlympusBondDepository is Ownable {
      *  @return decay_ uint
      */
     function debtDecay() public view returns ( uint decay_ ) {
-        uint blocksSinceLast = block.number.sub( lastDecay );
+        uint blocksSinceLast = ArbSys(100).arbBlockNumber().sub( lastDecay );
         decay_ = totalDebt.mul( blocksSinceLast ).div( terms.vestingTerm );
         if ( decay_ > totalDebt ) {
             decay_ = totalDebt;
@@ -1076,7 +1087,7 @@ contract OlympusBondDepository is Ownable {
      */
     function percentVestedFor( address _depositor ) public view returns ( uint percentVested_ ) {
         Bond memory bond = bondInfo[ _depositor ];
-        uint blocksSinceLast = block.number.sub( bond.lastBlock );
+        uint blocksSinceLast = ArbSys(100).arbBlockNumber().sub( bond.lastBlock );
         uint vesting = bond.vesting;
 
         if ( vesting > 0 ) {

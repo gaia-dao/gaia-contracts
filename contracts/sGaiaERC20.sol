@@ -989,6 +989,17 @@ contract Ownable is IOwnable {
     }
 }
 
+/**
+* @dev Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
+*/
+interface ArbSys {
+    /**
+    * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
+    * @return block number as int
+    */
+    function arbBlockNumber() external view returns (uint);
+}
+
 contract sOlympus is ERC20Permit, Ownable {
 
     using SafeMath for uint256;
@@ -1107,7 +1118,7 @@ contract sOlympus is ERC20Permit, Ownable {
             totalStakedAfter: circulatingSupply(),
             amountRebased: profit_,
             index: index(),
-            blockNumberOccured: block.number
+            blockNumberOccured: ArbSys(100).arbBlockNumber()
         }));
         
         emit LogSupply( epoch_, block.timestamp, _totalSupply );
